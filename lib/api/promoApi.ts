@@ -21,9 +21,11 @@ type HomeProductsKey =
 
 export type HomeData = Omit<ApiHome, HomeProductsKey> & Record<HomeProductsKey, ProductType[]>;
 
-const mapList = (list: ApiProduct[]) => list.map(mapProduct);
+const mapList = (list: ApiProduct[] = []) => list.map(mapProduct);
 
 export const promoApi = baseApi.injectEndpoints({
+  // Dev rejimida fayl qayta yuklanganda (HMR) endpointlar qayta ro'yxatdan o'tadi
+  overrideExisting: process.env.NODE_ENV === "development",
   endpoints: (build) => ({
     // GET /home/ — bosh sahifa uchun hammasi bitta so'rovda
     getHome: build.query<HomeData, void>({

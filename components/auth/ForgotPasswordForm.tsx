@@ -12,7 +12,6 @@ import {
 import { parseAuthError, type FieldErrors } from "./authErrors";
 import {
   AuthPage,
-  CodeInput,
   Field,
   FormError,
   FormNotice,
@@ -59,7 +58,7 @@ export default function ForgotPasswordForm() {
     reset();
     if (!email.trim()) return setFieldErrors({ email: "Заполните это поле." });
     try {
-      // POST /auth/forgot-password/
+      // POST /auth/password/reset/request/
       await forgot({ email: email.trim() }).unwrap();
       setStep("code");
       setNotice(`Если аккаунт с адресом ${email.trim()} существует, мы отправили на него код для сброса пароля.`);
@@ -72,7 +71,7 @@ export default function ForgotPasswordForm() {
     e.preventDefault();
     reset();
     try {
-      // POST /auth/verify-reset-code/
+      // Kod alohida tekshirilmaydi
       await verifyCode({ email: email.trim(), code }).unwrap();
       setStep("password");
       setNotice("Код подтверждён. Придумайте новый пароль.");
@@ -86,7 +85,7 @@ export default function ForgotPasswordForm() {
     reset();
     if (password !== password2) return setFieldErrors({ password2: "Пароли не совпадают." });
     try {
-      // POST /auth/reset-password/
+      // POST /auth/password/reset/confirm/
       await resetPassword({
         email: email.trim(),
         code,
@@ -127,7 +126,17 @@ export default function ForgotPasswordForm() {
         {step === "code" && (
           <form onSubmit={handleCode} className="space-y-5" noValidate>
             <FormNotice message={notice} />
-            <CodeInput value={code} onChange={setCode} error={fieldErrors.code} />
+            {/* fixingtools backend tokeni 6 xonali raqam bo'lmasligi mumkin — istalgan matnni qabul qilamiz */}
+            <Field label="Код из письма" required error={fieldErrors.code}>
+              <input
+                type="text"
+                autoComplete="one-time-code"
+                value={code}
+                onChange={(e) => setCode(e.target.value.trim())}
+                placeholder="Вставьте код из письма"
+                className={inputClass(!!fieldErrors.code)}
+              />
+            </Field>
             <FormError message={generalError} />
             <PrimaryButton loading={checking}>Продолжить</PrimaryButton>
             <button

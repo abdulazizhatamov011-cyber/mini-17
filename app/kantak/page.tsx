@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import LoginForm from "@/components/auth/LoginForm";
 import CabinetShell, { CABINET_ITEMS, type CabinetTab } from "@/components/cabinet/CabinetShell";
 import FavoritesContent from "@/components/cabinet/FavoritesContent";
+import OrderDetailModal from "@/components/cabinet/OrderDetailModal";
 import {
   User,
   MapPin,
@@ -24,6 +25,7 @@ import {
   useGetMyOrdersQuery,
   useGetProfileQuery,
   useLogoutMutation,
+  useSetDefaultAddressMutation,
   useUpdateProfileMutation,
 } from "@/lib/api/authApi";
 import type { OrderStatus } from "@/lib/api/types";
@@ -96,8 +98,11 @@ function Cabinet() {
     skip: !isAuthed,
   });
   const [logout] = useLogoutMutation();
+  // Bosilgan buyurtma tafsiloti (GET /user/orders/{id}/)
+  const [openOrder, setOpenOrder] = useState<number | null>(null);
 
   const ORDERS = (ordersData?.results ?? []).map((order) => ({
+    orderId: order.id,
     id: order.number,
     date: formatDate(order.created_at),
     status: order.status_display.toUpperCase(),
@@ -150,7 +155,14 @@ function Cabinet() {
           </thead>
           <tbody className="divide-y divide-gray-50 text-xs sm:text-sm">
             {ORDERS.map((order, idx) => (
-              <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+              <tr
+                key={idx}
+                onClick={() => setOpenOrder(order.orderId)}
+                onKeyDown={(e) => e.key === "Enter" && setOpenOrder(order.orderId)}
+                tabIndex={0}
+                aria-label={`Открыть заказ ${order.id}`}
+                className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+              >
                 <td className="py-4 font-semibold text-gray-800">{order.id}</td>
                 <td className="py-4 text-gray-500">{order.date}</td>
                 <td className="py-4">
@@ -169,6 +181,7 @@ function Cabinet() {
           </tbody>
         </table>
       )}
+      {openOrder !== null && <OrderDetailModal orderId={openOrder} onClose={() => setOpenOrder(null)} />}
     </div>
   );
 
@@ -322,6 +335,7 @@ function Addresses() {
   const { data: addresses = [], isLoading } = useGetAddressesQuery();
   const [add, { isLoading: adding }] = useAddAddressMutation();
   const [remove] = useDeleteAddressMutation();
+  const [setDefault] = useSetDefaultAddressMutation();
   const empty = { region: "", city: "", street: "", house: "", phone: "" };
   const [form, setForm] = useState(empty);
 
@@ -363,6 +377,23 @@ function Addresses() {
                   {a.is_default && <span className="ml-2 text-emerald-600">• основной</span>}
                 </p>
               </div>
+              <span className="flex items-center gap-1 shrink-0">
+              {!a.is_default && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await setDefault(a.id).unwrap();
+                      toast.success("Основной адрес изменён");
+                    } catch (err) {
+                      toast.error(errorText(err, "Не удалось изменить основной адрес"));
+                    }
+                  }}
+                  className="text-xs text-blue-600 hover:underline px-1.5"
+                >
+                  Сделать основным
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => remove(a.id)}
@@ -371,6 +402,7 @@ function Addresses() {
               >
                 <Trash2 size={16} />
               </button>
+              </span>
             </li>
           ))}
         </ul>

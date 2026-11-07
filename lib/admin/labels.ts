@@ -104,17 +104,37 @@ export const ARTICLE_TYPE: Record<ArticleType, string> = {
 };
 
 // Backend xatosidan matn olish ({"field": ["msg"]} / {"detail": "..."})
+// Backend xatosini qisqa matnga aylantirish: "401 · Войдите как сотрудник"
+const SHORT_ERRORS: Record<number, string> = {
+  401: "Войдите как сотрудник",
+  403: "Нет прав администратора",
+  404: "Не найдено",
+  405: "Действие недоступно",
+  409: "Конфликт данных",
+  413: "Файл слишком большой",
+  429: "Слишком много запросов, подождите",
+};
+
 export function apiError(error: unknown, fallback = "Не удалось сохранить изменения") {
-  const err = error as { status?: number | string; data?: unknown };
-  if (err?.status === 403) return "Недостаточно прав для этого действия.";
-  if (err?.status === "FETCH_ERROR") return "Нет соединения с сервером.";
+  const err = error as { status?: number | string; originalStatus?: number; data?: unknown };
+  if (err?.status === "FETCH_ERROR") return "Нет соединения с сервером";
+  if (err?.status === "TIMEOUT_ERROR") return "Сервер не ответил вовремя";
+  // PARSING_ERROR: server JSON o'rniga HTML qaytardi (odatda 500)
+  const code = typeof err?.status === "number" ? err.status : err?.originalStatus;
+  if (code && code >= 500) return `${code} · Ошибка сервера`;
+  if (code && SHORT_ERRORS[code]) return `${code} · ${SHORT_ERRORS[code]}`;
+
+  // 400: birinchi maydon xatosi — "price: Ensure this value..." -> "price: ..."
   const data = err?.data;
   if (data && typeof data === "object") {
     const [key, value] = Object.entries(data as Record<string, unknown>)[0] ?? [];
     const msg = Array.isArray(value) ? value[0] : value;
-    if (typeof msg === "string") return key && key !== "detail" ? `${key}: ${msg}` : msg;
+    if (typeof msg === "string") {
+      const short = msg.length > 90 ? `${msg.slice(0, 87)}…` : msg;
+      return `${code ? `${code} · ` : ""}${key && key !== "detail" ? `${key}: ` : ""}${short}`;
+    }
   }
-  return fallback;
+  return code ? `${code} · ${fallback}` : fallback;
 }
 
 // Backend media fayli nisbiy (/media/...) bo'lsa — backend domenini qo'shamiz

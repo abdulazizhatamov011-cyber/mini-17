@@ -14,8 +14,13 @@ import type {
   ResetPasswordRequest,
 } from "./types";
 
-// Auth va shaxsiy kabinet: /api/v1/auth/*, /api/v1/user/*
+/* Auth va shaxsiy kabinet: /api/v1/auth/*, /api/v1/user/*
+   DIQQAT: yeteper714 backend'ining hozirgi versiyasida bu endpointlar yo'q (404) —
+   login, ro'yxatdan o'tish, profil va manzillar backend qaytarilguncha ishlamaydi.
+   Buyurtmalar ro'yxati esa akkauntsiz, sessiya bo'yicha ishlaydi (GET /orders/). */
 export const authApi = baseApi.injectEndpoints({
+  // Dev rejimida fayl qayta yuklanganda (HMR) endpointlar qayta ro'yxatdan o'tadi
+  overrideExisting: process.env.NODE_ENV === "development",
   endpoints: (build) => ({
     // remember — "Запомнить меня" (backend'ga yuborilmaydi, faqat token qayerda saqlanishini belgilaydi)
     login: build.mutation<LoginResponse, LoginRequest & { remember?: boolean }>({
@@ -66,6 +71,16 @@ export const authApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/user/addresses/${id}`, method: "DELETE" }),
       invalidatesTags: ["Addresses"],
     }),
+    // PATCH /user/addresses/{id}/
+    updateAddress: build.mutation<Address, Partial<Address> & { id: number }>({
+      query: ({ id, ...body }) => ({ url: `/user/addresses/${id}`, method: "PATCH", body }),
+      invalidatesTags: ["Addresses"],
+    }),
+    // POST /user/addresses/{id}/set-default/ — asosiy manzil (checkout'da birinchi tanlanadi)
+    setDefaultAddress: build.mutation<Address, number>({
+      query: (id) => ({ url: `/user/addresses/${id}/set-default`, method: "POST", body: {} }),
+      invalidatesTags: ["Addresses"],
+    }),
     logout: build.mutation<Detail, void>({
       query: () => ({
         url: "/auth/logout",
@@ -90,8 +105,9 @@ export const authApi = baseApi.injectEndpoints({
       query: (body) => ({ url: "/user/profile", method: "PATCH", body }),
       invalidatesTags: ["Profile"],
     }),
+    // GET /orders/ — shu sessiyadan (brauzerdan) berilgan buyurtmalar, akkaunt shart emas
     getMyOrders: build.query<Paginated<OrderList>, { page?: number } | void>({
-      query: (params) => ({ url: "/user/orders", params: params ?? undefined }),
+      query: (params) => ({ url: "/orders", params: params ?? undefined }),
       providesTags: ["Orders"],
     }),
   }),
@@ -109,6 +125,8 @@ export const {
   useGetAddressesQuery,
   useAddAddressMutation,
   useDeleteAddressMutation,
+  useUpdateAddressMutation,
+  useSetDefaultAddressMutation,
   useLogoutMutation,
   useGetProfileQuery,
   useUpdateProfileMutation,

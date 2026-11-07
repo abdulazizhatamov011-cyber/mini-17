@@ -3,6 +3,7 @@ import type { AdminOrder, AdminPage, OrderPayment, OrderStatus } from "./types";
 
 // /api/v1/admin/{resource}/ — barcha admin bo'limlar uchun umumiy CRUD.
 // resource: "products" | "categories" | "brands" | "orders" | "stock" | "users" | ...
+// Demo rejimda bu so'rovlarni lib/admin/demo.ts ushlaydi (baseApi ichida).
 type Params = Record<string, string | number | boolean | undefined | null>;
 
 const clean = (params?: Params) =>
@@ -14,6 +15,8 @@ const clean = (params?: Params) =>
 type Body = Record<string, unknown> | FormData;
 
 export const adminApi = baseApi.injectEndpoints({
+  // Dev rejimida fayl qayta yuklanganda (HMR) endpointlar qayta ro'yxatdan o'tadi
+  overrideExisting: process.env.NODE_ENV === "development",
   endpoints: (build) => ({
     adminList: build.query<AdminPage<unknown>, { resource: string; params?: Params }>({
       query: ({ resource, params }) => ({ url: `/admin/${resource}`, params: clean(params) }),

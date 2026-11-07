@@ -144,7 +144,6 @@ export default function ProductCard({ product }: ProductCardProps) {
                   width={16}
                   height={16}
                   className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain"
-                  style={{ height: "auto" }}
                 />
               )}
             </button>

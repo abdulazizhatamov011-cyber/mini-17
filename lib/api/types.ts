@@ -209,3 +209,112 @@ export interface LeadCreateRequest {
   product?: number | null;
   consent?: boolean;
 }
+
+// ---------- Buyurtma (mijoz tomoni) ----------
+export type DeliveryType = "delivery" | "pickup";
+export type PaymentMethod = "card" | "on_delivery" | "invoice";
+
+// POST /orders/ — mehmon buyurtmasi (akkaunt shart emas, savat sessiya cookie'siga bog'langan)
+export interface OrderCreateRequest {
+  customer_name: string;
+  customer_phone: string;
+  customer_email?: string;
+  address?: { company_name?: string; street: string; house?: string };
+  delivery_type: DeliveryType;
+  payment_method: PaymentMethod;
+  city_id?: number | null;
+}
+
+// GET /geo/cities/ — yetkazib berish narxi shaharga bog'liq
+export interface City {
+  id: number;
+  name: string;
+  region: string;
+  delivery_cost: string;
+}
+
+export interface OrderItem {
+  id: number;
+  product: number | null;
+  product_slug: string;
+  name_snapshot: string;
+  article_snapshot: string;
+  price: string;
+  quantity: number;
+  total: string;
+}
+
+export interface OrderDetail extends OrderList {
+  customer_name?: string;
+  customer_phone?: string;
+  customer_email?: string;
+  payment_due_at?: string | null;
+  items: OrderItem[];
+  address_snapshot: Record<string, unknown> | null;
+  subtotal: string;
+  cart_discount: string;
+  promo_discount: string;
+  delivery_cost: string;
+}
+
+// ---------- To'lov ----------
+export type PaymentStatus = "pending" | "succeeded" | "cancelled" | "failed" | "refunded";
+
+export interface Payment {
+  id: number;
+  order: number;
+  order_number: string;
+  provider: string;
+  provider_id: string;
+  payment_type: string;
+  status: PaymentStatus;
+  amount: string;
+  created_at: string;
+}
+
+export interface PaymentInitResponse {
+  payment: Payment;
+  payment_id: string;
+  return_url: string;
+  amount: string;
+}
+
+export interface QrResponse {
+  qr_image: string;
+  payment_url: string;
+  amount: string;
+  merchant_trans_id: string;
+}
+
+export interface InvoiceResponse {
+  error_code?: number;
+  error_note?: string;
+  invoice_id?: number;
+  status?: "created" | "paid" | "expired" | "cancelled";
+}
+
+// ---------- Sevimlilar, taqqoslash, sharhlar ----------
+export interface WishlistItem {
+  id: number;
+  product: ProductList;
+}
+
+export interface ComparisonRow {
+  attribute_id: number;
+  code: string;
+  name: string;
+  unit: string;
+  is_common: boolean;
+  values: Record<string, string | null>;
+}
+
+export interface MyReview {
+  id: number;
+  product: number | null;
+  author_name: string;
+  rating: number;
+  comment: string;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+}

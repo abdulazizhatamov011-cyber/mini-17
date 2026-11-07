@@ -6,7 +6,8 @@ import { showAddedToCartToast, showCartErrorToast } from "@/components/CartToast
 // Backend xatosidan o'qiladigan matnni olish: {"quantity": ["..."]} yoki {"detail": "..."}
 export function getApiErrorMessage(error: unknown, fallback: string) {
   const data = (error as { data?: unknown })?.data;
-  if (typeof data === "string") return data;
+  // HTML xato sahifasini (Django 404/500) foydalanuvchiga ko'rsatmaymiz
+  if (typeof data === "string") return data.trimStart().startsWith("<") ? fallback : data;
   if (data && typeof data === "object") {
     const first = Object.values(data as Record<string, unknown>)[0];
     if (Array.isArray(first) && typeof first[0] === "string") return first[0];

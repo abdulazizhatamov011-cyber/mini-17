@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Store } from "lucide-react";
 import { useLoginMutation } from "@/lib/api/authApi";
+import { baseApi } from "@/lib/api/baseApi";
+import { useAppDispatch } from "@/lib/hooks";
+import { enableDemo, isDemoCredentials } from "@/lib/admin/demo";
 import { parseAuthError } from "@/components/auth/authErrors";
 import { Button, Field, inputCls } from "@/components/admin/ui";
 
@@ -17,12 +20,20 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [login, { isLoading }] = useLoginMutation();
+  const dispatch = useAppDispatch();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!email.trim() || !password) {
       setError("Введите email и пароль.");
+      return;
+    }
+    // Demo kirish: namunaviy ma'lumotlar bilan (backend'ga so'rov ketmaydi)
+    if (isDemoCredentials(email, password)) {
+      enableDemo();
+      dispatch(baseApi.util.resetApiState());
+      router.replace("/admin");
       return;
     }
     try {
@@ -32,7 +43,9 @@ export default function AdminLoginPage() {
     } catch (err) {
       const { status, general, fields } = parseAuthError(err);
       setError(
-        status === 403
+        status === 404
+          ? "Вход недоступен: в API нет /auth/login/ (404). Используйте демо-доступ."
+          : status === 403
           ? "Email не подтверждён. Подтвердите его через письмо на сайте."
           : general || Object.values(fields)[0] || "Не удалось войти."
       );

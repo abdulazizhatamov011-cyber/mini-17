@@ -2,16 +2,18 @@
 
 import { useState } from 'react';
 import { ProductType } from '@/types/product';
+import ProductReviews from '@/components/ProductReviews';
 
 interface ProductTabsProps {
   product: ProductType;
 }
 
-type TabKey = 'specs' | 'about' | 'delivery';
+type TabKey = 'specs' | 'about' | 'reviews' | 'delivery';
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'specs', label: 'Характеристики' },
   { key: 'about', label: 'О товаре' },
+  { key: 'reviews', label: 'Отзывы' },
   { key: 'delivery', label: 'Доставка и оплата' },
 ];
 
@@ -96,6 +98,9 @@ export default function ProductTabs({ product }: ProductTabsProps) {
         )}
 
         {/* ДОСТАВКА И ОПЛАТА */}
+        {/* ОТЗЫВЫ */}
+        {activeTab === 'reviews' && <ProductReviews productId={product.id} />}
+
         {activeTab === 'delivery' && (
           <div className="text-xs sm:text-sm text-gray-700 space-y-5 sm:space-y-6 leading-relaxed">
             <div>

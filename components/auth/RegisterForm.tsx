@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRegisterMutation } from "@/lib/api/authApi";
+import toast from "react-hot-toast";
+import { useLoginMutation, useRegisterMutation } from "@/lib/api/authApi";
 import { PASSWORD_HINT, passwordProblem } from "@/lib/passwordRules";
 import { parseAuthError, type FieldErrors } from "./authErrors";
-import VerifyEmailForm from "./VerifyEmailForm";
 import {
   AuthAside,
   AuthCard,
@@ -52,9 +52,10 @@ export default function RegisterForm() {
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [generalError, setGeneralError] = useState("");
-  const [registered, setRegistered] = useState(false);
 
-  const [register, { isLoading }] = useRegisterMutation();
+  const [register, { isLoading: registering }] = useRegisterMutation();
+  const [login, { isLoading: loggingIn }] = useLoginMutation();
+  const isLoading = registering || loggingIn;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +80,7 @@ export default function RegisterForm() {
     }
 
     try {
-      // POST /auth/register/ — emailga 6 xonali kod yuboriladi
+      // POST /auth/register/ — email tasdiqlash yo'q
       await register({
         email: email.trim(),
         password,
@@ -87,24 +88,25 @@ export default function RegisterForm() {
         ...splitFullName(fullName),
         phone_number: `+${phone.replace(/\D/g, "")}`,
       }).unwrap();
-      setRegistered(true);
     } catch (error) {
       const { fields, general } = parseAuthError(error);
       // Ism/familiya xatolarini ФИО maydoni ostida ko'rsatamiz
       if (fields.last_name && !fields.first_name) fields.first_name = fields.last_name;
       setFieldErrors(fields);
       setGeneralError(general);
+      return;
     }
+    // Akkaunt yaratildi — darhol kiramiz va kabinetga o'tamiz
+    try {
+      await login({ email: email.trim(), password, remember: true }).unwrap();
+      toast.success("Регистрация завершена");
+    } catch {
+      toast.success("Аккаунт создан. Войдите с вашим email и паролем.");
+    }
+    router.push("/kantak");
   };
 
-  const form = registered ? (
-    <VerifyEmailForm
-      email={email.trim()}
-      password={password}
-      initialNotice={`Мы отправили 6-значный код на ${email.trim()}. Введите его, чтобы подтвердить email и завершить регистрацию.`}
-      onVerified={() => router.push("/kantak")}
-    />
-  ) : (
+  const form = (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <Field label="Email" required error={fieldErrors.email}>
@@ -175,7 +177,7 @@ export default function RegisterForm() {
   );
 
   return (
-    <AuthPage crumb="Регистрация" title={registered ? "Подтверждение email" : "Регистрация"}>
+    <AuthPage crumb="Регистрация" title="Регистрация">
       <AuthCard
         form={form}
         aside={

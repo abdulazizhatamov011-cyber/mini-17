@@ -26,12 +26,24 @@ export const translate = (msg: string) =>
   TRANSLATIONS.find(([re]) => re.test(msg))?.[1] ?? msg;
 
 export function parseAuthError(error: unknown): { fields: FieldErrors; general: string; status?: number | string } {
-  const err = error as { status?: number | string; data?: unknown };
+  const err = error as { status?: number | string; originalStatus?: number; data?: unknown };
   const fields: FieldErrors = {};
   let general = "";
 
   if (err?.status === "FETCH_ERROR") {
     return { fields, general: "Нет соединения с сервером. Попробуйте ещё раз.", status: err.status };
+  }
+  // Backend JSON o'rniga HTML qaytarsa (404/500 sahifasi) — RTK "PARSING_ERROR" beradi, asl kod originalStatus'da.
+  // HTML matnini tarjima qilmaymiz: unda tasodifiy so'zlar ("didn't match") bo'ladi.
+  if (err?.status === "PARSING_ERROR") {
+    const status = err.originalStatus;
+    const general =
+      status === 404
+        ? "Сервис временно недоступен (404): endpoint не найден на сервере."
+        : status && status >= 500
+          ? `Ошибка сервера (${status}). Попробуйте позже.`
+          : "Что-то пошло не так. Попробуйте ещё раз.";
+    return { fields, general, status };
   }
 
   const data = err?.data;

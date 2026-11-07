@@ -11,6 +11,8 @@ import type {
 import type { ProductType } from "@/types/product";
 
 export const productsApi = baseApi.injectEndpoints({
+  // Dev rejimida fayl qayta yuklanganda (HMR) endpointlar qayta ro'yxatdan o'tadi
+  overrideExisting: process.env.NODE_ENV === "development",
   endpoints: (build) => ({
     // GET /catalog/products/?category_slug=&search=&page=...
     getProducts: build.query<Paginated<ProductType>, ProductsQueryParams | void>({
@@ -55,10 +57,12 @@ export const productsApi = baseApi.injectEndpoints({
     // GET /catalog/products/{id}/rating/
     getProductRating: build.query<ApiRatingSummary, number>({
       query: (id) => `/catalog/products/${id}/rating`,
+      providesTags: (_r, _e, id) => [{ type: "Reviews", id }],
     }),
     // GET /catalog/products/{id}/reviews/
     getProductReviews: build.query<Paginated<ApiProductReview>, { id: number; page?: number }>({
       query: ({ id, page }) => ({ url: `/catalog/products/${id}/reviews`, params: { page } }),
+      providesTags: (_r, _e, { id }) => [{ type: "Reviews", id }],
     }),
   }),
 });

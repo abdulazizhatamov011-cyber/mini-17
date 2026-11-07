@@ -39,6 +39,9 @@ import type { AdminLead, AdminOrder } from "@/lib/admin/types";
 import { dateTime, money } from "@/lib/admin/labels";
 import { useMounted } from "@/lib/useMounted";
 import { AdminProvider, rangeFromPreset, useAdminRange, type RangePreset } from "./AdminContext";
+import { disableDemo, isDemo, resetDemoData } from "@/lib/admin/demo";
+import { baseApi } from "@/lib/api/baseApi";
+import { useAppDispatch } from "@/lib/hooks";
 import { Button, ConfirmProvider, Skeleton } from "./ui";
 
 const NAV: { group: string; items: { href: string; label: string; icon: React.ElementType }[] }[] = [
@@ -129,7 +132,7 @@ function Sidebar({
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5 [scrollbar-width:thin]">
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {NAV.map((section) => (
             <div key={section.group}>
               <p className={`px-3 mb-1.5 text-[11px] uppercase tracking-wider text-white/45 ${narrow ? "lg:hidden" : ""}`}>
@@ -339,8 +342,10 @@ function Notifications() {
 
 function Topbar({ onOpenMenu, name, email }: { onOpenMenu: () => void; name: string; email: string }) {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [query, setQuery] = useState("");
   const [logout] = useLogoutMutation();
+  const demo = isDemo();
 
   return (
     <header className="print:hidden sticky top-0 z-40 h-16 bg-white/95 backdrop-blur border-b border-gray-200 flex items-center gap-3 px-4 lg:px-6">
@@ -368,6 +373,20 @@ function Topbar({ onOpenMenu, name, email }: { onOpenMenu: () => void; name: str
       </form>
 
       <div className="ml-auto flex items-center gap-2">
+        {demo && (
+          <button
+            type="button"
+            onClick={() => {
+              if (!window.confirm("Вернуть демо-данные к исходному состоянию? Все изменения будут удалены.")) return;
+              resetDemoData();
+              dispatch(baseApi.util.resetApiState());
+            }}
+            title="Сбросить демо-данные"
+            className="hidden md:inline-flex items-center h-8 px-2.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold hover:bg-amber-200"
+          >
+            Демо · сбросить
+          </button>
+        )}
         <DateRangePicker />
         <Notifications />
         <div className="hidden sm:flex items-center gap-3 pl-3 ml-1 border-l border-gray-200">
@@ -382,7 +401,9 @@ function Topbar({ onOpenMenu, name, email }: { onOpenMenu: () => void; name: str
         <button
           type="button"
           onClick={async () => {
+            if (demo) disableDemo();
             await logout().unwrap().catch(() => {});
+            dispatch(baseApi.util.resetApiState());
             router.replace("/admin/login");
           }}
           aria-label="Выйти"
@@ -399,7 +420,7 @@ function Topbar({ onOpenMenu, name, email }: { onOpenMenu: () => void; name: str
 // Admin huquqini tekshirish: admin endpointi 401 -> login, 403 -> ruxsat yo'q
 function useAdminAccess() {
   const mounted = useMounted();
-  const hasToken = mounted && !!tokenStorage.getAccess();
+  const hasToken = mounted && (!!tokenStorage.getAccess() || isDemo());
   const probe = useAdminList("orders", { page_size: 1 }, { skip: !hasToken });
   const status = (probe.error as { status?: number } | undefined)?.status;
   return {

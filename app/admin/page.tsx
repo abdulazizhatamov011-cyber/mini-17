@@ -12,7 +12,7 @@ import type {
   AdminUser,
   PaymentMethod,
 } from "@/lib/admin/types";
-import { ORDER_STATUS, PAYMENT_METHOD, STOCK_STATUS, dateTime, money, num } from "@/lib/admin/labels";
+import { ORDER_STATUS, PAYMENT_METHOD, STOCK_STATUS, apiError, dateTime, money, num } from "@/lib/admin/labels";
 import { previousRange, useAdminRange } from "@/components/admin/AdminContext";
 import { BarList, Donut, LineChart } from "@/components/admin/charts";
 import { Badge, Card, EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/admin/ui";
@@ -167,7 +167,7 @@ export default function DashboardPage() {
       <>
         <PageHeader title="Дашборд" />
         <Card>
-          <ErrorState message="Не удалось получить заказы с сервера." onRetry={orders.refetch} />
+          <ErrorState message={apiError(orders.error, "Не удалось получить заказы")} onRetry={orders.refetch} />
         </Card>
       </>
     );
@@ -290,7 +290,7 @@ export default function DashboardPage() {
           ) : all.length === 0 ? (
             <EmptyState title="Заказов пока нет" text="Новые заказы с сайта появятся здесь." />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <table className="w-full text-sm tabular-nums">
                 <thead className="text-xs text-gray-500 bg-gray-50">
                   <tr>

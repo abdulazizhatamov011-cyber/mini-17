@@ -1,8 +1,10 @@
 import { baseApi } from "./baseApi";
 import type { Cart } from "./types";
 
-// Savat: /api/v1/cart/  (login qilmagan bo'lsa ham sessionid cookie orqali ishlaydi)
+// Savat: /api/v1/cart/  (akkaunt shart emas — sessionid cookie orqali ishlaydi)
 export const cartApi = baseApi.injectEndpoints({
+  // Dev rejimida fayl qayta yuklanganda (HMR) endpointlar qayta ro'yxatdan o'tadi
+  overrideExisting: process.env.NODE_ENV === "development",
   endpoints: (build) => ({
     getCart: build.query<Cart, void>({
       query: () => "/cart",

@@ -2,6 +2,8 @@ import { baseApi } from "./baseApi";
 import type { ApiBrand, ApiCategory, ApiCategoryTree, Paginated } from "@/types/api";
 
 export const catalogApi = baseApi.injectEndpoints({
+  // Dev rejimida fayl qayta yuklanganda (HMR) endpointlar qayta ro'yxatdan o'tadi
+  overrideExisting: process.env.NODE_ENV === "development",
   endpoints: (build) => ({
     // GET /catalog/categories/
     getCategories: build.query<ApiCategory[], void>({

@@ -7,6 +7,7 @@ import {
 } from "@reduxjs/toolkit/query/react";
 import { tokenStorage } from "./tokenStorage";
 import type { TokenPair } from "./types";
+import { demoQuery } from "@/lib/admin/demo";
 
 // next.config.ts dagi rewrite orqali backendga boradi 
 const rawBaseQuery = fetchBaseQuery({
@@ -25,6 +26,10 @@ const baseQueryWithReauth: BaseQueryFn<
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
+  // Admin-panel demo rejimi: namunaviy ma'lumotlar (faqat /admin sahifalarida)
+  const demo = demoQuery(args);
+  if (demo) return demo as Awaited<ReturnType<typeof rawBaseQuery>>;
+
   let result = await rawBaseQuery(args, api, extraOptions);
 
   const refresh = tokenStorage.getRefresh();
@@ -63,6 +68,9 @@ export const baseApi = createApi({
     "News",
     "Admin",
     "Addresses",
+    "Wishlist",
+    "Compare",
+    "Reviews",
   ],
   endpoints: () => ({}),
 });

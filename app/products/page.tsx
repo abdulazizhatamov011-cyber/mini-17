@@ -51,7 +51,7 @@ export default function ProductsPage() {
             <div className="flex items-center justify-center gap-3 mt-8">
               <button
                 type="button"
-                disabled={!data.previous || isFetching}
+                disabled={page <= 1 || isFetching}
                 onClick={() => setPage((p) => p - 1)}
                 className="px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40"
               >
@@ -62,7 +62,7 @@ export default function ProductsPage() {
               </span>
               <button
                 type="button"
-                disabled={!data.next || isFetching}
+                disabled={page >= data.pages || isFetching}
                 onClick={() => setPage((p) => p + 1)}
                 className="px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40"
               >
